@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoteFinder</title>
+  <link rel="icon" type="image/x-icon" href="assets/images/icon.ico">
+
+  <link rel="stylesheet" href="assets/bootstrap/bootstrap-reboot.min.css" />
+  <link rel="stylesheet" href="assets/datatables/datatables.min.css" />
+  <link rel="stylesheet" href="assets/font/material-icons/material-icons.css">
+  <link rel="stylesheet" href="assets/font/charis-sil/charis-sil.css">
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+
+<body>
+  <!-- Wrap the whole content in a single container -->
+  <div id="containerParent">
+    <!-- Container for loading UI -->
+    <div id="containerLoader">
+      <img src="assets/images/logo-full.svg" alt="NoteFinder Logo" draggable="false">
+    </div>
+    <!-- #END Container for loading UI -->
+    <!-- Container for Window Title Bar -->
+    <div id="containerTitleBar">NoteFinder</div>
+    <!-- #END Container for Window Title Bar  -->
+
+    <!-- Container for main content -->
+    <div id="containerContent">
+      <!-- Section menu -->
+      <section id="sectionMenu" class="">
+
+        <div>
+          <div class="button menu-button transparent" id="buttonMenuToggle"><span
+              class="material-icons-round menu-button-icon">menu</span></div>
+        </div>
+
+        <div>
+          <div class="button menu-button button-choose" id="buttonChooseDirectory" data-default="Choose PDF Folder">
+            <span class="material-icons-round icon-right">folder_open</span>
+            <span class="button-choose-text"></span>
+          </div>
+        </div>
+
+        <div>
+          <div class="button menu-button transparent" id="buttonRefresh"><span
+              class="material-icons-round">refresh</span></div>
+        </div>
+
+      </section>
+      <!-- #END Section menu -->
+
+      <!-- Section information -->
+      <section id="sectionInfo" class="">
+
+        <h5 class="info-header">OPTIONS</h5>
+        <div class="group-menu-button-switch">
+          <div class="button menu-button switch" data-key="enableRecursive" data-state="on">Search PDF in
+            Subfolders<span class="menu-button-icon material-icons-round icon-left">check_box</span></div>
+          <div class="button menu-button switch" data-key="showTitle" data-state="on">Show Document Title<span
+              class="menu-button-icon material-icons-round icon-left">check_box</span></div>
+          <div class="button menu-button switch" data-key="trimNewline" data-state="on">Trim Comment's Newline<span
+              class="menu-button-icon material-icons-round icon-left">check_box</span></div>
+        </div>
+
+        <h5 class="info-header" id="buttonChoosePdfAppHeader">PDF APPLICATION EXECUTABLE</h5>
+        <div class="button menu-button button-choose" id="buttonChoosePdfApp"
+          data-default="Choose PDF Application Executable">
+          <span class="material-icons-round icon-right">picture_as_pdf</span>
+          <span class="button-choose-text"></span>
+        </div>
+
+        <h5 class="info-header">RESET</h5>
+        <div class="button menu-button" id="buttonResetConfig"><span
+            class="material-icons-round icon-right">restart_alt</span>Reset All Settings</div>
+
+        <h5 class="info-header">ABOUT</h5>
+        <img id="imgInfoLogo" src="assets/images/logo-full.svg" alt="NoteFinder Logo" draggable="false">
+        <div id="copyright">
+          <code>Version 0.5.2 | <span id="appLicense">AGPL-3.0-only License</span> | <span id="appUrl">https://github.com/irsyadler/NoteFinder</span></code>
+          <br>
+          <code>NoteFinder © 2023 M. A. Irsyad M. Aminuddin</code>
+        </div>
+        <div class="menu-seperator"></div>
+
+      </section>
+      <!-- #END Section information -->
+
+      <!-- Section table -->
+      <section id="sectionTable" class="">
+
+        <div id="boxFilter">
+          <div class="menu-stat-info">
+            <span class="type">Document</span>
+            <span class="value" id="infoFileCount"></span>
+          </div>
+          <div class="menu-stat-info">
+            <span class="type">Size</span>
+            <span class="value" id="infoFileSize"></span>
+          </div>
+          <div class="menu-stat-info">
+            <span class="type">Annotation</span>
+            <span class="value" id="infoAnnotationCount"></span>
+          </div>
+
+          <div class="menu-seperator"></div>
+
+          <div class="button menu-button" id="buttonSetPageLength">
+            <span class="text">Paging</span>
+            <span class="value" id="infoPageLength"></span>
+          </div>
+
+          <div id="boxFilterInput">
+            <span class="material-icons-round icon-right">search</span>
+            <input type="text" id="inputSearchTable" placeholder="Filter">
+
+          </div>
+
+        </div>
+
+        <div id="boxTable">
+          <table id="tableAnnotation" class="">
+            <thead>
+              <tr>
+                <th>Relative Path</th>
+                <th>Filename / PDF Title</th>
+                <th>Page</th>
+                <th>Type</th>
+                <th>Annotation Content</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="boxStatus">
+
+          <div id="boxStatusLoader">
+            <img id="imgStatusOut" src="assets/images/logo-frame.svg" draggable="false">
+            <img id="imgStatusIn" src="assets/images/logo-char.svg" draggable="false">
+          </div>
+
+          <span id="boxStatusError" class="material-icons-round icon-right">error_outline</span>
+          <span id="boxStatusText" data-default="Please choose the PDF folder."></span>
+        </div>
+
+      </section>
+      <!-- #END Section table -->
+    </div>
+    <!-- #END Container for main content -->
+
+  </div>
+  <script src="assets/jquery/jquery-3.6.1.min.js"></script>
+  <script src="assets/datatables/datatables.min.js"></script>
+  <script src="assets/datatables-highlight/jquery.highlight.js"></script>
+  <script src="assets/datatables-highlight/dataTables.searchHighlight.min.js"></script>
+  <script src="assets/script.js"></script>
+</body>
+
+</html>
