@@ -127,7 +127,8 @@ body {
 }
 
 
-.button:disabled {
+.button:disabled,
+.button:disabled:hover {
     background-color: rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.5) !important;
     color: rgba(0, 0, 0, 0.5);
@@ -137,18 +138,12 @@ body {
     text-decoration: none;
     display: inline-block;
     transition: unset;
+    text-shadow: unset;
     box-shadow: unset;
     transition: unset;
     cursor: default;
 }
 
-.button:disabled:hover {
-    background: rgba(255, 255, 255, 0.5) !important;
-    color: rgba(0, 0, 0, 0.5) !important;
-    cursor: default;
-    box-shadow: unset;
-    text-shadow: unset;
-}
 
 .button span.ripple {
     position: absolute;
@@ -183,6 +178,63 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+
+
+
+
+#contextMenu {
+    position: fixed;
+    z-index: 10;
+    width: 200px;
+    /* background: #1b1a1a; */
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(15px) saturate(200%);
+    box-shadow: 0.25rem 0.25rem 1rem 0.15rem rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    transform: scale(0);
+    transform-origin: top left;
+}
+
+#contextMenu.visible {
+    transform: scale(1);
+    transition: transform 200ms ease-in-out;
+}
+
+#contextMenu .item {
+    display: none;
+}
+
+#contextMenu .item.visible {
+    display: block;
+    padding: 0.5rem 1rem;
+    /* font-size: 15px; */
+    color: var(--color-font-dark);
+    cursor: pointer;
+    /* border-radius: inherit; */
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#contextMenu .item.visible.top {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+#contextMenu .item.visible.bottom {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    border-bottom: none;
+}
+
+
+
+#contextMenu .item.visible:hover {
+    /* background: var(--color-background-table-control); */
+    /* background-color: rgba(255, 255, 255, 1); */
+    background-color: var(--color-main-two);
+    color: var(--color-font-light);
+}
+
 
 /* #END Commons content ------------------------------------------------------------------------------------------------------------------ */
 
@@ -300,12 +352,12 @@ body {
     padding: 0rem 1rem 1rem 1rem;
     display: none;
     color: var(--color-font-light);
-    background-color: var(--color-dark-primary);
+    background-color: var(--color-dark-secondary);
     align-items: center;
     flex-direction: column;
     position: relative;
-    background-color: rgba(66, 66, 66, 0.75);
-    backdrop-filter: blur(15px) saturate(200%);
+    /* background-color: rgba(66, 66, 66, 0.75);
+    backdrop-filter: blur(15px) saturate(200%); */
     z-index: 1;
     position: absolute;
     width: 100%;
@@ -352,19 +404,18 @@ body {
 }
 
 #sectionOptions #copyright code {
+    color: var(--color-font-light);
     color: rgba(255, 255, 255, 0.75);
+    font-family: "CharisSIL", sans-serif;
 }
 
 
-#appUrl,
-#appLicense {
-    text-decoration: underline;
-}
 
 #appUrl:hover,
 #appLicense:hover {
     color: var(--color-main-one);
     cursor: pointer;
+    text-decoration: underline;
 }
 
 #sectionOptions .button:hover .material-icons-round.gradient,
@@ -610,17 +661,20 @@ body {
     border-radius: var(--border-radius);
     padding-left: 1rem;
     padding-right: 1rem;
-    height: 3rem;
+    min-height: 3rem;
+    height: 100%;
     width: 100%;
     margin-top: 1rem;
 }
 
-.editor-input-box input {
+.editor-input-box textarea {
     border: none;
     width: 100%;
+    line-height: 1.25rem;
+    resize: none;
 }
 
-.editor-input-box input:focus {
+.editor-input-box textarea:focus {
     outline: none;
 }
 
@@ -744,11 +798,20 @@ table.dataTable span.column_highlight {
     font-weight: var(--bold-weight);
 }
 
-#tableAnnotation thead tr th:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-    border-radius: var(--border-radius);
-    border: none;
+#tableAnnotation.row-grouping thead tr th {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
+
+#tableAnnotation thead tr th:hover {
+    background-color: rgba(255, 255, 255, 0.75);
+    /* border-radius: var(--border-radius); */
+    /* border: none; */
+}
+
+/* #tableAnnotation thead tr th:first-child:hover {
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+} */
 
 table.dataTable thead>tr>th.sorting_asc:before,
 table.dataTable thead>tr>th.sorting_desc:after,
@@ -775,6 +838,7 @@ table.dataTable thead>tr>td.sorting_asc_disabled:before,
 table.dataTable thead>tr>td.sorting_desc_disabled:before {
     bottom: 60%;
     /* content: "🡹"; */
+    content: "";
 }
 
 table.dataTable thead>tr>th.sorting:after,
@@ -789,16 +853,32 @@ table.dataTable thead>tr>td.sorting_asc_disabled:after,
 table.dataTable thead>tr>td.sorting_desc_disabled:after {
     top: 60%;
     /* content: "🡻"; */
+    content: "";
+}
+
+
+#tableAnnotation thead th .material-icons-round {
+    color: var(--color-dark-secondary);
+    position: absolute;
+    /* display: block; */
+    opacity: .125;
+    right: 0;
+    /* line-height: 9px;
+    font-size: .8em; */
+}
+
+#tableAnnotation thead th .material-icons-round.active {
+    opacity: 1;
+    background: var(--color-main-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 #tableAnnotation tbody {
     line-height: 1.25rem;
 }
 
-#tableAnnotation tbody tr[data-document],
-#tableAnnotation tbody tr td[data-document] {
-    cursor: alias !important;
-}
 
 
 #tableAnnotation tbody .material-icons-round.table-comment {
@@ -816,7 +896,9 @@ table.dataTable thead>tr>td.sorting_desc_disabled:after {
 }
 
 #tableAnnotation tbody tr:hover .material-icons-round.table-comment,
-#tableAnnotation tbody tr:hover .material-icons-round.table-highlight {
+#tableAnnotation tbody tr:hover .material-icons-round.table-highlight,
+#tableAnnotation tbody tr.menu-active .material-icons-round.table-comment,
+#tableAnnotation tbody tr.menu-active .material-icons-round.table-highlight {
     color: var(--color-font-light);
     background: unset;
     background-clip: unset;
@@ -833,17 +915,15 @@ table.dataTable thead>tr>td.sorting_desc_disabled:after {
     text-align: left;
 }
 
-#tableAnnotation tbody tr:hover .dbclick-table-row {
+#tableAnnotation tbody tr:hover .dbclick-table-row,
+#tableAnnotation tbody tr.menu-active .dbclick-table-row {
     background-color: var(--color-main-two);
     color: var(--color-font-light);
     cursor: pointer;
 }
 
-
-.dtrg-group.dtrg-start.dtrg-level-0 th {
-    background: transparent;
-    color: var(--color-font-dark);
-
+#tableAnnotation tbody tr .dbclick-table-row.loading {
+    cursor: wait ;
 }
 
 /* Page column */
@@ -899,18 +979,33 @@ table.dataTable thead>tr>td.sorting_desc_disabled:after {
 }
 
 /* Row grouping border style ----------------------------- */
-#tableAnnotation.row-grouping tbody tr.dtrg-group.dtrg-start.dtrg-level-0 th {
-    color: var(--color-dark-secondary);
+#tableAnnotation.row-grouping tbody tr.dtrg-group.dtrg-level-0 th {
     font-weight: 600;
+    background: var(--color-background-table);
+    color: var(--color-font-dark);
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding:1rem
 }
 
+#tableAnnotation tbody tr.dtrg-level-0.dbclick-table-row:hover th, 
+#tableAnnotation tbody tr.menu-active.dtrg-level-0.dbclick-table-row th {
+    background-color: var(--color-main-two);
+    color: var(--color-font-light);
+    cursor: pointer; 
+}
+
+#tableAnnotation tbody tr.dtrg-level-0.dbclick-table-row.loading:hover th{
+    cursor: wait ;
+}
 
 #tableAnnotation.row-grouping tr.group-bottom-transparent-row td {
     border-bottom: none;
 }
 
 #tableAnnotation.row-grouping tr.group-bottom-transparent-row.top-group {
-    height: 0.5rem;
+    /* height: 0.5rem; */
     display: block;
 }
 
@@ -937,23 +1032,45 @@ table.dataTable thead>tr>td.sorting_desc_disabled:after {
 
 /* #ND Row grouping border style ----------------------------- */
 
+.dataTables_empty{
+    border-radius: var(--border-radius);
+}
 
 #tableAnnotation_info {
     display: none;
 }
 
+#tablePaginationHolder {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
 
 #tableAnnotation_paginate {
     /* padding-top: reset datatables default value */
-    padding-top: 0;
+    /* padding-top: 0;
     margin-top: 1rem;
-    margin-right: 1rem;
+    margin-right: 1rem; */
     background-color: var(--color-background-table-control);
+    display: flex;
+    /* margin-bottom: 1rem; */
+    
 }
 
 #tableAnnotation_paginate a {
     /* Prevent weird 0.5rem margin/padding at the bottom */
     overflow: inherit;
+    height: 100%;
+    color: var(--color-font-dark);
+    height: 3rem;
+}
+
+#tableAnnotation_paginate a,
+#tableAnnotation_paginate span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #tableAnnotation_paginate a:active {
@@ -978,27 +1095,28 @@ table.dataTable thead>tr>td.sorting_desc_disabled:after {
 }
 
 #tableAnnotation_paginate.dataTables_paginate a.paginate_button.current {
-    color: var(--color-font-light) !important;
+    color: var(--color-font-light);
     background: var(--color-main-gradient);
 }
 
 #tableAnnotation_paginate.dataTables_paginate a.paginate_button:hover {
     /*  Override datatables.min.css */
-    color: var(--color-font-light) !important;
+    color: var(--color-font-light);
     background: var(--color-main-gradient);
 }
 
 #tableAnnotation_paginate.dataTables_paginate a.paginate_button.disabled,
 #tableAnnotation_paginate.dataTables_paginate a.paginate_button.disabled:hover {
-    color: rgba(0, 0, 0, 0.5) !important;
+    color: rgba(0, 0, 0, 0.5);
     text-shadow: unset;
+    box-shadow: unset;
     cursor: default;
     background: rgba(255, 255, 255, 0.75);
 }
 
 
 #tableAnnotation_paginate.dataTables_paginate span.ellipsis {
-    color: var(--color-font-light);
+    color: var(--color-font-dark);
     font-weight: 700;
     padding: 0 0.5rem;
 }
