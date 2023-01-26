@@ -1,7 +1,7 @@
 {
   "name": "notefinder",
   "productName": "NoteFinder",
-  "version": "0.8.5",
+  "version": "0.8.23",
   "description": "Search annotations in PDF documents",
   "main": "src/backend/main.js",
   "author": "M. A. Irsyad M. Aminuddin <contact@irsyadler.com> (https://www.irsyadler.com)",
@@ -11,14 +11,12 @@
     "start": "electron . --mode=dev"
   },
   "devDependencies": {
-    "electron": "^21.3.3",
+    "electron": "^22.0.0",
     "electron-builder": "^23.6.0"
   },
   "dependencies": {
-    "date-fns": "^2.29.3",
     "electron-log": "^4.4.8",
     "electron-store": "^8.1.0",
-    "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^2.16.105"
+    "pdf-lib": "^1.17.1"
   }
 }
