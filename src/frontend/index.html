@@ -95,7 +95,7 @@
             </tbody>
           </table>
         </div>
-
+        <div id="tablePaginationHolder"></div>
         <div id="boxStatus">
           <div id="boxStatusLoader">
             <img id="imgStatusOut" src="assets/images/logo-frame.svg" draggable="false">
@@ -111,16 +111,18 @@
             <h5 class="editor-header">Edit PDF Document's Title</h5>
             <div id="editorInfoFilePath" title="The PDF document's location"></div>
 
-            <div class="editor-input-box" id="editorBoxTitle" >
+            <div class="editor-input-box" id="editorBoxTitle">
               <span class="material-icons-round icon-left">title</span>
-              <input type="text" id="editorBoxTitleInput" placeholder="PDF Document Title">
+              <textarea rows="2" id="editorBoxTitleInput" placeholder="PDF Document Title"></textarea>
             </div>
-            
+
             <div class="editor-button-group">
               <span id="editorStatusText"></span>
               <div class="navigation-seperator"></div>
-              <div class="button common-button editor-button-cancel" id="buttonEditorCancel">Cancel<span class="material-icons-round icon-right">cancel</span></div>
-              <div class="button common-button editor-button-save" id="buttonEditorSave">Save<span class="material-icons-round icon-right">save</span></div>
+              <div class="button common-button editor-button-cancel" id="buttonEditorCancel">Cancel<span
+                  class="material-icons-round icon-right">cancel</span></div>
+              <div class="button common-button editor-button-save" id="buttonEditorSave">Save<span
+                  class="material-icons-round icon-right">save</span></div>
             </div>
           </div>
         </div>
@@ -161,7 +163,7 @@
         <img id="imgInfoLogo" src="assets/images/logo-full.svg" alt="NoteFinder Logo" draggable="false"
           title="NoteFinder Logo">
         <div id="copyright">
-          <code>Version 0.8.5 | <span id="appLicense">AGPL-3.0-only License</span> | <span id="appUrl">https://github.com/irsyadler/NoteFinder</span></code>
+          <code>Version 0.8.23 | <span id="appLicense">AGPL-3.0-only License</span> | <span id="appUrl">https://github.com/irsyadler/NoteFinder</span></code>
           <br>
           <code>NoteFinder © 2023 M. A. Irsyad M. Aminuddin</code>
         </div>
@@ -169,15 +171,59 @@
 
       </section>
       <!-- #END Section options -->
+
+      <!-- Section context-menu -->
+      <section id="contextMenu">
+        <div class="item" data-action="cut">Cut</div>
+        <div class="item" data-action="copy">Copy</div>
+        <div class="item" data-action="paste">Paste</div>
+        <div class="item" data-action="editTitle">Edit Title</div>
+        <div class="item" data-action="openDocument">Open Document</div>
+      </section>
+      <!-- #END Section context-menu -->
+
     </div>
     <!-- #END Container for main content -->
 
   </div>
+
+  <div id="infoTableStats"></div>
+  <div id="infoTableStats"></div>
+
   <script src="assets/jquery/jquery-3.6.1.min.js"></script>
   <script src="assets/datatables/datatables.min.js"></script>
   <script src="assets/datatables-highlight/jquery.highlight.js"></script>
   <script src="assets/datatables-highlight/dataTables.searchHighlight.min.js"></script>
+  <script src="assets/pdfjs/pdf.js"></script>
   <script src="assets/script.js"></script>
+  <script src="assets/reader.js"></script>
+
+  <!-- PDF document date parser -->
+  <script type="module">
+    import { format, parse } from "./assets/date-fns/date-fns-2.29.3-esm.js";
+
+    method.pdf.parseDate = (dateString) => { // Parse PDF document date into a proper date
+      // Ensure date string is non-empty
+      if (dateString === undefined || dateString === null || typeof dateString !== "string" || dateString === "") {
+        return method.pdf.config.errorDateValue;
+      }
+
+      try {
+        // Slice string for primary data without unrelated token
+        // Slice based on -> D:YYYYMMDDHHmmSSOHH'mm'. Refer: https://www.verypdf.com/pdfinfoeditor/pdf-date-format.htm
+        dateString = dateString.slice(2, 19) + dateString.slice(20, 22);
+        let date = parse(dateString, "yyyyMMddHHmmssxx", new Date()); // Refer: https://date-fns.org/v2.29.3/docs/parse
+
+        // Seperate date and time into different line
+        return `${date.toLocaleDateString()}<br>${date.toLocaleTimeString().toUpperCase()}`;
+      } catch (error) {
+        console.error(error);
+        return method.pdf.config.errorDateValue;
+      }
+    };
+  </script>
+  <!-- #END PDF document date parser -->
+
 </body>
 
 </html>
