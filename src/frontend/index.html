@@ -5,13 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NoteFinder</title>
-  <link rel="icon" type="image/x-icon" href="assets/images/icon.ico">
 
   <link rel="stylesheet" href="assets/bootstrap/bootstrap-reboot.min.css" />
   <link rel="stylesheet" href="assets/datatables/datatables.min.css" />
   <link rel="stylesheet" href="assets/font/material-icons/material-icons.css">
   <link rel="stylesheet" href="assets/font/charis-sil/charis-sil.css">
   <link rel="stylesheet" href="assets/style.css" />
+
 </head>
 
 <body>
@@ -28,106 +28,67 @@
 
     <!-- Container for main content -->
     <div id="containerContent">
-      <!-- Section menu -->
-      <section id="sectionMenu" class="">
+      <!-- Section navigation -->
+      <section id="sectionNavigation" class="">
 
         <div>
-          <div class="button menu-button transparent" id="buttonMenuToggle"><span
-              class="material-icons-round menu-button-icon">menu</span></div>
+          <div class="button common-button transparent" id="buttonOptionsToggle" title="Show or hide the menu"><span
+              class="material-icons-round common-button-icon">menu</span></div>
         </div>
 
         <div>
-          <div class="button menu-button button-choose" id="buttonChooseDirectory" data-default="Choose PDF Folder">
-            <span class="material-icons-round icon-right">folder_open</span>
+          <div class="button common-button button-choose" id="buttonChooseDirectory" data-default="Choose PDF Folder"
+            title="Choose the directory contains PDF document(s)">
+            <span class="material-icons-round icon-left gradient">folder_open</span>
             <span class="button-choose-text"></span>
           </div>
         </div>
 
         <div>
-          <div class="button menu-button transparent" id="buttonRefresh"><span
-              class="material-icons-round">refresh</span></div>
+          <div class="button common-button transparent" id="buttonRefresh" title="Refresh the annotation table">
+            <span class="material-icons-round">refresh</span>
+          </div>
         </div>
 
       </section>
-      <!-- #END Section menu -->
+      <!-- #END Section navigation -->
 
-      <!-- Section information -->
-      <section id="sectionInfo" class="">
+      <!-- Section content -->
+      <section id="sectionContent" class="">
 
-        <h5 class="info-header">OPTIONS</h5>
-        <div class="group-menu-button-switch">
-          <div class="button menu-button switch" data-key="enableRecursive" data-state="on">Search PDF in
-            Subfolders<span class="menu-button-icon material-icons-round icon-left">check_box</span></div>
-          <div class="button menu-button switch" data-key="showTitle" data-state="on">Show Document Title<span
-              class="menu-button-icon material-icons-round icon-left">check_box</span></div>
-          <div class="button menu-button switch" data-key="trimNewline" data-state="on">Trim Comment's Newline<span
-              class="menu-button-icon material-icons-round icon-left">check_box</span></div>
-        </div>
-
-        <h5 class="info-header" id="buttonChoosePdfAppHeader">PDF APPLICATION EXECUTABLE</h5>
-        <div class="button menu-button button-choose" id="buttonChoosePdfApp"
-          data-default="Choose PDF Application Executable">
-          <span class="material-icons-round icon-right">picture_as_pdf</span>
-          <span class="button-choose-text"></span>
-        </div>
-
-        <h5 class="info-header">RESET</h5>
-        <div class="button menu-button" id="buttonResetConfig"><span
-            class="material-icons-round icon-right">restart_alt</span>Reset All Settings</div>
-
-        <h5 class="info-header">ABOUT</h5>
-        <img id="imgInfoLogo" src="assets/images/logo-full.svg" alt="NoteFinder Logo" draggable="false">
-        <div id="copyright">
-          <code>Version 0.5.2 | <span id="appLicense">AGPL-3.0-only License</span> | <span id="appUrl">https://github.com/irsyadler/NoteFinder</span></code>
-          <br>
-          <code>NoteFinder © 2023 M. A. Irsyad M. Aminuddin</code>
-        </div>
-        <div class="menu-seperator"></div>
-
-      </section>
-      <!-- #END Section information -->
-
-      <!-- Section table -->
-      <section id="sectionTable" class="">
-
-        <div id="boxFilter">
-          <div class="menu-stat-info">
-            <span class="type">Document</span>
-            <span class="value" id="infoFileCount"></span>
-          </div>
-          <div class="menu-stat-info">
-            <span class="type">Size</span>
-            <span class="value" id="infoFileSize"></span>
-          </div>
-          <div class="menu-stat-info">
-            <span class="type">Annotation</span>
-            <span class="value" id="infoAnnotationCount"></span>
+        <div id="boxSearch">
+          <div id="boxSearchInput" title="Search the annotation table">
+            <span class="material-icons-round icon-left">search</span>
+            <input type="text" id="inputSearchTable" placeholder="Search">
           </div>
 
-          <div class="menu-seperator"></div>
+          <div class="button common-button button-mutable" id="buttonSetGroupOrder">
+            <span class="text">Sort Title</span>
+            <span class="value" id="infoGroupOrder"></span>
+          </div>
 
-          <div class="button menu-button" id="buttonSetPageLength">
-            <span class="text">Paging</span>
+          <div class="button common-button button-mutable" id="buttonSetPageLength"
+            title="Set the number of annotation entries shown per page">
+            <span class="text">Show</span>
             <span class="value" id="infoPageLength"></span>
           </div>
 
-          <div id="boxFilterInput">
-            <span class="material-icons-round icon-right">search</span>
-            <input type="text" id="inputSearchTable" placeholder="Filter">
+          <div class="navigation-seperator"></div>
 
-          </div>
-
+          <div id="infoTableStats"></div>
         </div>
 
         <div id="boxTable">
-          <table id="tableAnnotation" class="">
+          <table id="tableAnnotation">
             <thead>
               <tr>
-                <th>Relative Path</th>
-                <th>Filename / PDF Title</th>
-                <th>Page</th>
-                <th>Type</th>
-                <th>Annotation Content</th>
+                <th>Document Location</th>
+                <th title="The annotations counter">#</th>
+                <th title="">Document Title</th>
+                <th title="The annotation's page number">Page</th>
+                <th title="The annotations's type (comment or highlight)">Type</th>
+                <th title="The annotations's content">Annotation Content</th>
+                <th title="">Created Date</th>
               </tr>
             </thead>
             <tbody>
@@ -136,18 +97,78 @@
         </div>
 
         <div id="boxStatus">
-
           <div id="boxStatusLoader">
             <img id="imgStatusOut" src="assets/images/logo-frame.svg" draggable="false">
             <img id="imgStatusIn" src="assets/images/logo-char.svg" draggable="false">
           </div>
 
-          <span id="boxStatusError" class="material-icons-round icon-right">error_outline</span>
+          <span id="boxStatusError" class="material-icons-round icon-left">error_outline</span>
           <span id="boxStatusText" data-default="Please choose the PDF folder."></span>
         </div>
 
+        <div id="boxEditor">
+          <div class="editor-frame">
+            <h5 class="editor-header">Edit PDF Document's Title</h5>
+            <div id="editorInfoFilePath" title="The PDF document's location"></div>
+
+            <div class="editor-input-box" id="editorBoxTitle" >
+              <span class="material-icons-round icon-left">title</span>
+              <input type="text" id="editorBoxTitleInput" placeholder="PDF Document Title">
+            </div>
+            
+            <div class="editor-button-group">
+              <span id="editorStatusText"></span>
+              <div class="navigation-seperator"></div>
+              <div class="button common-button editor-button-cancel" id="buttonEditorCancel">Cancel<span class="material-icons-round icon-right">cancel</span></div>
+              <div class="button common-button editor-button-save" id="buttonEditorSave">Save<span class="material-icons-round icon-right">save</span></div>
+            </div>
+          </div>
+        </div>
+
       </section>
-      <!-- #END Section table -->
+      <!-- #END Section content -->
+
+      <!-- Section options -->
+      <section id="sectionOptions" class="">
+
+        <h5 class="option-header">OPTIONS</h5>
+        <div class="group-common-button-switch">
+          <div class="button common-button switch" data-key="groupAnnotations" data-state="on"
+            title="Group annnotations on each PDF document">Group Annotations<span
+              class="common-button-icon material-icons-round icon-right gradient">check_box</span></div>
+          <div class="button common-button switch" data-key="showTitle" data-state="on"
+            title="Show PDF document's title instead of filename">Show Document Title<span
+              class="common-button-icon material-icons-round icon-right gradient">check_box</span></div>
+
+          <div class="button common-button switch" data-key="showModificationDate" data-state="off"
+            title="Show annotation's last modified date and time instead of created date and time">Show Modification
+            Date<span class="common-button-icon material-icons-round icon-right gradient">check_box</span>
+          </div>
+        </div>
+
+        <h5 class="option-header" id="buttonChoosePdfAppHeader">PDF APPLICATION EXECUTABLE</h5>
+        <div class="button common-button button-choose" id="buttonChoosePdfApp"
+          data-default="Choose PDF Application Executable" title="Set the Adobe Acrobat Reader application's location">
+          <span class="material-icons-round icon-left gradient">picture_as_pdf</span>
+          <span class="button-choose-text"></span>
+        </div>
+
+        <h5 class="option-header">RESET</h5>
+        <div class="button common-button" id="buttonResetConfig" title="Reset the NoteFinder application"><span
+            class="material-icons-round icon-left gradient">restart_alt</span>Reset All Settings</div>
+
+        <h5 class="option-header">ABOUT</h5>
+        <img id="imgInfoLogo" src="assets/images/logo-full.svg" alt="NoteFinder Logo" draggable="false"
+          title="NoteFinder Logo">
+        <div id="copyright">
+          <code>Version 0.8.5 | <span id="appLicense">AGPL-3.0-only License</span> | <span id="appUrl">https://github.com/irsyadler/NoteFinder</span></code>
+          <br>
+          <code>NoteFinder © 2023 M. A. Irsyad M. Aminuddin</code>
+        </div>
+        <div class="navigation-seperator"></div>
+
+      </section>
+      <!-- #END Section options -->
     </div>
     <!-- #END Container for main content -->
 
