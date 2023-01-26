@@ -22,8 +22,9 @@ files:
   - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
   # Custom
   - "!dist"
+  - "!docs"
 
-# Disabled remote as since Electron Build Service is currently unavailable
+# Disabled remote build as Electron Build Service is currently unavailable
 remoteBuild: false
 
 compression: "maximum"
