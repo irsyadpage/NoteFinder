@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/irsyadler/NoteFinder/main/src/frontend/assets/images/logo-full-dark.svg" width="400" alt="NoteFinder Logo">
+  <img src="https://raw.githubusercontent.com/irsyadpage/NoteFinder/main/src/frontend/assets/images/logo-full-dark.svg" width="400" alt="NoteFinder Logo">
 </p>
 
 <p align="center">An application for searching comments and highlights annotations in PDF documents.</p>
@@ -21,7 +21,7 @@
 <p align="center">
   NoteFinder Application Screenshot
   <br>
-  <img src="https://raw.githubusercontent.com/irsyadler/NoteFinder/main/docs/screenshot-v0.8.23-1.png" width="700" alt="NoteFinder Application Screenshot">
+  <img src="https://raw.githubusercontent.com/irsyadpage/NoteFinder/main/docs/screenshot-v0.8.23-1.png" width="700" alt="NoteFinder Application Screenshot">
 </p>
 
 
@@ -35,7 +35,7 @@ Therefore, these problems limit the portability and ease of access to my notes (
 
 
 ## ℹ️ Download & How to Use
-1. Download the latest [NoteFinder release](https://github.com/irsyadler/NoteFinder/releases/).
+1. Download the latest [NoteFinder release](https://github.com/irsyadpage/NoteFinder/releases/).
 2. Open the downloaded executable (`.exe` for Windows) or extract the archive (`.zip` for Windows, and `.tar.gz` for macOS and Linux) to open the executable.
 3. Choose a folder containing PDF documents for annotations searching by clicking the `Choose PDF Folder` button on the top. Users may also drag-and-drop a folder/files containing PDF documents into the NoteFinder application.
 4. NoteFinder will start searching PDF annotations in the chosen folder. Scanning and analysing each document might take time if the folder contains many PDF documents. Only PDF documents containing annotations (comments or highlights) will appear in the annotations table.
@@ -53,7 +53,7 @@ The PDF document editor feature enables users to edit a document's title. It is 
 NoteFinder is developed and tested on Windows (ia32 and x64) environment. But all necessary items (including icon files) are already in place for other platform distributions. To develop and test the NoteFinder, please do the following:
 1. Ensure the [Node.js](https://nodejs.org/en/) version `18.12.1` or later is installed on the system.
 2. Download the source code or clone this repository by executing the following commands:
-    - `git clone https://github.com/irsyadler/NoteFinder`
+    - `git clone https://github.com/irsyadpage/NoteFinder`
     - `cd NoteFinder`
 3. In the source code directory, run the `npm install` command to install all necessary dependencies.
 4. To start the NoteFinder, run the `npm start` command.
@@ -87,4 +87,4 @@ NoteFinder is available under the [AGPL-3.0-only](LICENSE) license.
 
 
 ## 📧 Contact 
-For any inquiries please contact: `contact [at] irsyadler [dot] com`.
+For any inquiries please contact: `contact [at] irsyad [dot] page`.

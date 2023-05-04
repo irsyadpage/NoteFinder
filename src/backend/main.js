@@ -60,7 +60,7 @@ app.whenReady().then(() => {
     ipcMain.handle('data:readDocument', data.readDocument);
     ipcMain.handle('action:openFile', data.openPdfFile);
     ipcMain.on('open:appUrl', (event) => {
-        require('electron').shell.openExternal('https://github.com/irsyadler/NoteFinder');
+        require('electron').shell.openExternal('https://github.com/irsyadpage/NoteFinder');
     });
     ipcMain.handle('editor:getInfo', data.getEditorInfo);
     ipcMain.handle('editor:saveInfo', data.saveEditorInfo);

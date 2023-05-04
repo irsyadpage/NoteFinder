@@ -1,4 +1,4 @@
-appId: "com.irsyadler.app.notefinder"
+appId: "page.irsyad.app.notefinder"
 productName: "NoteFinder"
 copyright: "Copyright (C) 2023 M. A. Irsyad M. Aminuddin"
 
@@ -8,7 +8,7 @@ directories:
 
 files:
   - "**/*"
-  - "!build.js"
+  - "!build.*"
   - "!docs"
 
 # Disabled remote build as Electron Build Service is currently unavailable
