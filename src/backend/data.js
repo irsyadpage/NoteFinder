@@ -4,14 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const { dialog } = require('electron');
 const { exec } = require('child_process');
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const { PDFDocument } = require('pdf-lib');
 const Store = require('electron-store');
 const log = require('electron-log');
-const fns = require('date-fns')
-
 
 log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
+
 
 // Define the configuration data scheme. This sceheme will be store persistently.
 const configSchema = {
@@ -19,7 +17,7 @@ const configSchema = {
         type: "object",
         required: ["ver", "directoryList", "pdfAppExecutablePath", "enableRecursive", "showRelativePath", "showTitle", "trimNewline", "pageLength", "showModificationDate", "groupAnnotations", "sortGroupAsc"],
         properties: {
-            ver: { type: "string", default: "0.8.5" }, // Config version -> for future update checking
+            ver: { type: "string", default: "0.8.23" }, // Config version -> for future update checking
             directoryList: { type: "array", default: [] },
             pdfAppExecutablePath: { type: "string", default: "" },
             enableRecursive: { type: "boolean", default: true },
@@ -36,9 +34,6 @@ const configSchema = {
 };
 const store = new Store({ schema: configSchema, clearInvalidConfig: true });
 
-const standardFontDataUrl = path.join(__dirname, '../../node_modules/pdfjs-dist/standard_fonts/');
-
-const errorDateValue = "N/A"; // When date parsing failed.
 
 // Recursive loop to get all files and directories
 const getAllPdfFiles = async (parentDirectory, directoryList, enableRecursive, pdfFileList, statCounter) => {
@@ -114,164 +109,8 @@ const getAllPdfFiles = async (parentDirectory, directoryList, enableRecursive, p
 }
 
 
-// Read PDF content to get all page's annotations
-const readPdfDocument = async (config, documentPath) => {
-
-    // Get document filename
-    let documentName = path.basename(documentPath);
-
-    // Current document annotation list
-    let currentPDFannotation = [];
-
-    // Read PDF document
-    // Set standardFontDataUrl to avoid warning on missing fonts
-    let documentObject = pdfjsLib.getDocument({ url: documentPath, standardFontDataUrl: standardFontDataUrl });
-    let pdf = await documentObject.promise;
-
-    // Set the PDF's title as document name if showTitle is enabled
-    if (config.showTitle === true) {
-        let pdfMetadata = await pdf.getMetadata();
-        if (pdfMetadata.hasOwnProperty('info') && pdfMetadata.info.hasOwnProperty('Title')) {
-            let title = pdfMetadata.info['Title'].trim();
-            // Ensure title exist and has non-empty string value
-            if (title.length > 0) {
-                documentName = title;
-            }
-        }
-    }
-
-    // Iterate each PDF's page
-    let totalPage = pdf.numPages;
-    for (let currentPageNo = 1; currentPageNo <= totalPage; currentPageNo++) {
-        // Get current page annotation
-        let currentPageContent = await pdf.getPage(currentPageNo);
-        let currentPageAnnotationList = await getPageAnnotation(currentPageContent, config);
-
-        /*  DataTable's array format:
-                0 - Full PDF File Path (including PDF Filename)
-                1 - Annotation Counter - for sorting (value is assigned after the return)
-                2 - PDF Filename / Document Title
-                3 - Page Number
-                4 - Annotation Type
-                5 - Annotation Content
-                6 - Creation Date / Modification Date
-        */
-
-        for (const item of currentPageAnnotationList) {
-            currentPDFannotation.push([documentPath, null, documentName, currentPageNo, item[0], item[1], parsePdfDate(item[2])]);
-
-        }
-
-    }
-
-    return currentPDFannotation;
-}
-
-
-// Get all annotation in a PDF's page
-const getPageAnnotation = async (pageContent, config) => {
-
-    let pageAnnotationList = []; // Store both comment & highlight annotations
-    let annotationRectangleList = []; // Store rectangle dimensions for all highlight annotations
-
-    // Get annotations list
-    let annotationRawList = await pageContent.getAnnotations("display");
-    let arrayLength = annotationRawList.length;
-
-    // Iterate over annotations list
-    for (let i = 0; i < arrayLength; i++) {
-        if (annotationRawList[i].subtype == "Highlight") {
-            // Get annotate string
-            let annotateText = annotationRawList[i].contentsObj.str;
-
-            // Get creationDateTime / modificationDateTime
-            let dateTime = (config.showModificationDate === true) ? annotationRawList[i].modificationDate : annotationRawList[i].creationDate;
-
-            if (annotateText.length > 0) {
-                if (config.trimNewline === true) {
-                    pageAnnotationList.push([`<span class="material-icons-round table-comment">chat</span>`, annotateText.replace(/(?:\r\n|\r|\n)/g, " "), dateTime]);
-                } else {// Convert newline char to <br> tags
-                    pageAnnotationList.push([`<span class="material-icons-round table-comment">chat</span>`, annotateText.replace(/(?:\r\n|\r|\n)/g, "<br>"), dateTime]);
-                }
-
-            } else {
-
-                // No annotate string, so this is highlight only without comment
-                // Store the rectangle dimensions value
-                // Before store, insert creationDateTime / modificationDateTime as the 5th item
-                annotationRawList[i].rect.push(dateTime);
-                annotationRectangleList.push(annotationRawList[i].rect);
-            }
-        }
-    }
-
-    // Get the text content of highlighted annotations 
-    if (annotationRectangleList.length > 0) {
-        // Get all text content from page
-        let textContent = await pageContent.getTextContent();
-
-        if (textContent.items.length != 0) {
-            // Get text content properties
-            let textList = textContent.items
-                .filter(item => item.str != null && item.str.trim() != "")
-                .map(item => ({
-                    text: item.str,
-                    width: item.width,
-                    height: item.height,
-                    top: item.transform[5],
-                    left: item.transform[4],
-                    // transform: item.transform,
-                }));
-
-            // Iterate the list of rectangle dimensions value to find matching position of text content
-            for (const rectangleDimensions of annotationRectangleList) {
-
-                // There might be multiple text content annotation's rectangle dimensions
-                // Get all text content per ractangle dimension
-                let textArray = [];
-                for (const currentText of textList) {
-                    // Rectangle dimensions' coordinate format: x,y,x,y
-                    if (currentText.top >= rectangleDimensions[1] && currentText.top <= rectangleDimensions[3] && currentText.left >= rectangleDimensions[0] && currentText.left <= rectangleDimensions[2]) {
-                        textArray.push(currentText.text);
-                    }
-                }
-                pageAnnotationList.push([`<span class="material-icons-round table-highlight">border_color</span>`, textArray.join(' '), rectangleDimensions[4]]); // [4] is the creationDate / modificationDate
-            }
-        }
-    }
-
-    return pageAnnotationList;
-}
-
-
-const parsePdfDate = (dateString) => {
-
-    // Ensure date string is non-empty
-    if (dateString === undefined || dateString === null || typeof dateString !== "string" || dateString === "") {
-        return errorDateValue;
-    }
-
-    try {
-        // Slice string for primary data without unrelated token
-        // Slice based on -> D:YYYYMMDDHHmmSSOHH'mm'. Refer: https://www.verypdf.com/pdfinfoeditor/pdf-date-format.htm
-        dateString = dateString.slice(2, 19) + dateString.slice(20, 22);
-        let date = fns.parse(dateString, "yyyyMMddHHmmssxx", new Date()); // Refer: https://date-fns.org/v2.29.3/docs/parse
-
-        return date.toLocaleString().toUpperCase().replace(", ", "<br>");
-    } catch (error) {
-        console.error(error);
-        return errorDateValue;
-    }
-}
-
-
 module.exports = {
-    getConfig: (event, reset) => { // Read config file
-        // Reset config if set
-        if (reset === true) {
-            store.clear();
-        }
-
+    getConfig: (event) => { // Read config file
         const config = store.get('config');
         config.configFilePath = store.path; // For debugging
         return config;
@@ -310,32 +149,9 @@ module.exports = {
         }
 
     },
-    getAllPdfAnnotation: async (event, directoryData, config, frontend) => { // Iterate over list file to read each PDF
-
-        let currentPdfCount = 1;
-        let currentAnnotationCount = 1;
-        let allAnotationList = []
-        let failedFileList = []
-        // Iterate over each PDF file
-        for (const file of directoryData.pdfFileList) {
-
-            frontend.setStatus(`Reading PDF Document: ${currentPdfCount}/${directoryData.statCounter.file} (${(currentPdfCount / directoryData.statCounter.file * 100).toFixed(1)}%)`);
-            try {
-                let documentAnnotationList = await readPdfDocument(config, file);
-                for (const annotationItem of documentAnnotationList) {
-                    // Add annotation counter value
-                    annotationItem[1] = currentAnnotationCount++;
-
-                    allAnotationList.push(annotationItem);
-                }
-            } catch (error) {
-                log.error(file, error);
-                failedFileList.push(file);
-            }
-            currentPdfCount++;
-        }
-
-        return { annotationList: allAnotationList, failedList: failedFileList };
+   
+    readDocument: async (event, documentPath) => {
+        return await fs.promises.readFile(documentPath);
     },
     openPdfFile: (event, config, documentPath, documentPage) => { // Execute command to open PDF files
 
@@ -436,7 +252,7 @@ module.exports = {
         // Made backup copy first
         try {
             await fs.promises.copyFile(documentPath, documentPath + ".backup", fs.constants.COPYFILE_EXCL);
-          } catch (error) {
+        } catch (error) {
             log.info(error);
         }
 
@@ -453,9 +269,6 @@ module.exports = {
     }
 
 }
-
-
-
 
 
 
