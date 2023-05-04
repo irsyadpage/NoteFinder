@@ -1,0 +1,22 @@
+{
+  "name": "notefinder",
+  "productName": "NoteFinder",
+  "version": "0.5.2",
+  "description": "Search comments and highlights annotations in PDF documents",
+  "main": "src/backend/main.js",
+  "author": "M. A. Irsyad M. Aminuddin <contact@irsyadler.com> (https://www.irsyadler.com)",
+  "homepage": "https://github.com/irsyadler/NoteFinder",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^22.0.0",
+    "electron-builder": "^23.6.0"
+  },
+  "dependencies": {
+    "electron-log": "^4.4.8",
+    "electron-store": "^8.1.0",
+    "pdfjs-dist": "^2.16.105"
+  }
+}
