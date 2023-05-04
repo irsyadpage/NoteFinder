@@ -5,7 +5,9 @@ const mainData = {
     config: undefined,
     tempConfig: undefined,
     platform: "unknown", // Possible value [win, mac, unix, linux, unknown]
-    editorData: undefined
+    showPaginationButton: undefined, // Hide the pagination button
+    editorData: undefined, // Hold data related to title editor
+    activeContextMenu: undefined, // Hold jquery object that has active-menu class (trigger on right-click)
 };
 
 // Main method object access
@@ -24,12 +26,9 @@ method.initApp = async () => {
         method.action.initTable();
 
         // Attach search button
-        $("#inputSearchTable").keyup(function () {
+        $("#inputSearchTable").on("input", function () {
             mainData.tableAnnotation.search($(this).val()).draw();
         })
-
-        // Attach right click listener
-        $(document).on("contextmenu", "#tableAnnotation .editable-data", method.action.getEditorInfo);
 
         // Attach table row click listener
         $("#tableAnnotation").on("dblclick", "tbody .dbclick-table-row", method.action.openFile);
@@ -93,7 +92,8 @@ method.initApp = async () => {
         $("#buttonEditorCancel").click(method.UI.editorToggle);
         $("#buttonEditorSave").click(method.action.saveEditorInfo);
 
-
+        // Init context menu
+        method.action.initContextMenu();
 
         // Hide loader
         $("#containerLoader").addClass("hidden");
@@ -162,19 +162,8 @@ method.config = {
 
     },
     reset: async () => {
-        // Reset config data
-        mainData.config = await window.backend.getConfig(true);
         console.log("[CONFIG_RESET]", mainData.config);
-
-        if ($("#boxEditor").hasClass("active") === true) {
-            method.UI.editorToggle();
-        }
-
-        // Refresh component
-        method.UI.initButton();
-
-        // Toggle info
-        method.UI.menuToggle();
+        mainData.config = await window.backend.appReset();
     }
 }
 
@@ -233,6 +222,8 @@ method.UI = {
                         if (mainData.config.groupAnnotations !== mainData.tempConfig.groupAnnotations) {
                             // Clear and destroy current table
                             mainData.tableAnnotation.clear().destroy();
+                            // Clear pagination inside holder
+                            $("#tableAnnotation_paginate").remove();
 
                             // re-Init table
                             method.action.initTable();
@@ -240,8 +231,6 @@ method.UI = {
                         }
                         // Set search placeholder
                         method.UI.setSearchPlaceholder();
-
-                        method.UI.resizeBox();
 
                         // Trigger directory check
                         method.action.checkDirectory();
@@ -321,8 +310,15 @@ method.UI = {
             headerHeight += $("#containerTitleBar").outerHeight();
         }
 
+        let tablePaginationHolderHeight = 0;
+        if (mainData.showPaginationButton === true) { // Add value if not hidden
+            tablePaginationHolderHeight = $("#tablePaginationHolder").show().height() + padding;
+        } else {
+            $("#tablePaginationHolder").hide();
+        }
+
         $("#sectionContent").height(window.innerHeight - headerHeight); // Padding: 2rem; - (padding * 2)
-        $("#tableAnnotation_wrapper").height($("#sectionContent").height() - $("#boxSearch").outerHeight() - padding);
+        $("#tableAnnotation_wrapper").height($("#sectionContent").height() - $("#boxSearch").outerHeight() - padding - tablePaginationHolderHeight);
         $("#sectionOptions").height(window.innerHeight - headerHeight - padding);
 
         $("#sectionOptions").css("top", headerHeight);
@@ -511,6 +507,18 @@ method.action = {
             $("#buttonSetGroupOrder").css("display", "none");
         }
 
+        // // Move pagination outside from table
+        // // Main reason is: Unable to set shadow to appear above section.sectionContent unless unnecessary bottom-padding is added
+        $("#tableAnnotation_paginate").appendTo("#tablePaginationHolder");
+
+        // Re-attach scroller listener
+        $("#tableAnnotation_wrapper").on("scroll", null, (event) => {
+            const contextMenu = $("#contextMenu");
+            if (contextMenu.hasClass("visible")) {
+                contextMenu.removeClass("visible");
+                method.action.resetRowActivatedMenu();
+            }
+        });
     },
     chooseFile: async function () {
         const element = $(this);
@@ -533,16 +541,29 @@ method.action = {
         }
 
     },
-    openFile: function () {
-        let rowData = mainData.tableAnnotation.row($(this).parents('tr')).data();
-        console.log(rowData);
+    openFile: function (event) {
 
-        // Set pathData: [parentDirectory, relativeFilePath, pageNumber]
-        let result = window.backend.openFile(mainData.config, rowData[0], rowData[3]);
+        const data = { documentPath: null, page: null };
+
+        // Event will be undefined if it is trigger from context-menu -> openDocument click
+        const currentTarget = (event === undefined) ? mainData.activeContextMenu : $(this);
+        if (currentTarget.hasClass("dtrg-level-0") === true) { // This target is from row-group header row
+            const rowData = mainData.tableAnnotation.row(currentTarget.next()).data(); // Get data from next row
+            data.documentPath = rowData[0];
+            data.page = 1; // Override to page 1
+
+        } else {
+            const rowData = mainData.tableAnnotation.row((event === undefined) ? mainData.activeContextMenu : currentTarget.parents('tr')).data();
+            data.documentPath = rowData[0];
+            data.page = rowData[3];
+        }
+
+        // Set pathData: [parentDirectory, documentPath, pageNumber]
+        let result = window.backend.openFile(mainData.config, data.documentPath, data.page);
 
         // Show loading to simulate (delay) opening operation 
-        $("#tableAnnotation tbody tr:hover .dbclick-table-row").css("cursor", "wait");
-        setTimeout(function () { $("#tableAnnotation tbody tr:hover .dbclick-table-row").css("cursor", "pointer"); }, 1000);
+        $("#tableAnnotation tbody .dbclick-table-row").addClass("loading");
+        setTimeout(function () { $("#tableAnnotation tbody .dbclick-table-row.loading").removeClass("loading"); }, 1000);
 
         console.log(result);
     },
@@ -583,12 +604,13 @@ method.action = {
 
 
                         if (directoryData.statCounter.file > 0) {
-                            method.UI.setStatus("Reading file...");
-                            let result = await window.backend.getAnnotation(directoryData, mainData.config);
+                            method.UI.setStatus("Preparing PDF Document...");
+
+                            let result = await method.pdf.getAllAnnotations(directoryData);
                             console.log(result);
+
                             if (result.annotationList.length > 0) {
-                                mainData.tableAnnotation.clear().rows.add(result.annotationList);
-                                mainData.tableAnnotation.draw();
+                                mainData.tableAnnotation.rows.add(result.annotationList).draw();
 
                                 // Set statInfo
                                 // method.UI.setStatInfo(directoryData.statCounter.file, directoryData.statCounter.byte, result.annotationList.length);
@@ -654,7 +676,6 @@ method.action = {
             let fileList = [];
             for (const file of event.originalEvent.dataTransfer.files) {
                 // Using the path attribute to get absolute file path
-                // console.log('File Path of dragged files: ', file.path)
                 fileList.push(file.path);
             }
 
@@ -675,12 +696,17 @@ method.action = {
     },
     getEditorInfo: async (event) => {
 
-        const documentPath = $(event.currentTarget).attr("data-document");
-        mainData.editorData = documentPath;
-        let documentInfo = await window.backend.getEditorInfo(documentPath);
+        if (mainData.activeContextMenu.hasClass("dtrg-level-0") === true) // This is from row-group header row
+        {
+            mainData.editorData = mainData.tableAnnotation.row(mainData.activeContextMenu.next()).data()[0]; // Get data from next row
+        } else {
+            mainData.editorData = mainData.tableAnnotation.row(mainData.activeContextMenu).data()[0];
+        }
+
+        let documentInfo = await window.backend.getEditorInfo(mainData.editorData);
         if (documentInfo.success === true) {
             method.UI.editorToggle();
-            $("#editorInfoFilePath").text(documentPath);
+            $("#editorInfoFilePath").text(mainData.editorData);
             $("#editorBoxTitleInput").val(documentInfo.documentTitle);
 
             if (documentInfo.documentTitle === "") {
@@ -714,6 +740,185 @@ method.action = {
             $("#editorStatusText").addClass("error").text(result.reason);
         }
     },
+    initContextMenu: () => {
+        // Init the custom context-menu with related listener
+
+        // Based on https://github.com/GeorgianStan/context-menu-poc
+
+        const contextMenu = $("#contextMenu");
+        const scope = $("body");
+
+        // Compute the position for context-menu div
+        const normalizePosition = (mouseX, mouseY) => {
+            // ? compute what is the mouse position relative to the container element (scope)
+            let {
+                left: scopeOffsetX,
+                top: scopeOffsetY,
+            } = scope[0].getBoundingClientRect();
+
+            scopeOffsetX = scopeOffsetX < 0 ? 0 : scopeOffsetX;
+            scopeOffsetY = scopeOffsetY < 0 ? 0 : scopeOffsetY;
+
+            const scopeX = mouseX - scopeOffsetX;
+            const scopeY = mouseY - scopeOffsetY;
+
+            // ? check if the element will go out of bounds
+            const outOfBoundsOnX =
+                scopeX + contextMenu.innerWidth() > scope.innerWidth();
+
+            const outOfBoundsOnY =
+                scopeY + contextMenu.innerHeight() > scope.innerHeight();
+
+            let normalizedX = mouseX;
+            let normalizedY = mouseY;
+
+            // ? normalize on X
+            if (outOfBoundsOnX) {
+                normalizedX =
+                    scopeOffsetX + scope.innerWidth() - contextMenu.innerWidth();
+            }
+
+            // ? normalize on Y
+            if (outOfBoundsOnY) {
+                normalizedY =
+                    scopeOffsetY + scope.innerHeight() - contextMenu.innerHeight();
+            }
+
+            return { normalizedX, normalizedY };
+        };
+
+        // Init the calculation and show context-menu
+        const showContenxtMenu = (event, actionList) => {
+            // Hide all action
+            contextMenu.children().removeClass("visible top bottom");
+
+            // Show related action
+            const totalAction = actionList.length;
+            for (let index = 0; index < totalAction; index++) {
+                let item = contextMenu.children(`[data-action="${actionList[index]}"]`);
+                item.addClass("visible");
+                // Add style
+                if (index === 0) { item.addClass("top"); }
+                if (index === totalAction - 1) { item.addClass("bottom"); }
+            }
+
+
+            const { clientX: mouseX, clientY: mouseY } = event;
+            const { normalizedX, normalizedY } = normalizePosition(mouseX, mouseY);
+
+            contextMenu.removeClass("visible");
+
+            contextMenu.css("top", `${normalizedY}px`);
+            contextMenu.css("left", `${normalizedX}px`);
+
+            setTimeout(() => {
+                contextMenu.addClass("visible");
+            });
+        };
+
+
+        // Prevent default
+        scope.on("contextmenu", null, (event) => {
+            // event.preventDefault(); // prevent-context-menu
+        });
+
+        // https://stackoverflow.com/questions/55553601/simulate-cut-function-with-javascript
+
+        // Listener for context-menu item click
+        $("#contextMenu .item").click((event) => {  // Handle on-click event for context menu
+
+            const action = $(event.currentTarget).attr("data-action");
+            if (action === "cut") {
+                // Save text to clipboard
+                navigator.clipboard.writeText(window.getSelection().toString());
+
+                // Store value
+                const selectionStart = mainData.activeContextMenu[0].selectionStart
+                const originalText = mainData.activeContextMenu.val();
+
+                // Cut and set the text
+                mainData.activeContextMenu.val(originalText.slice(0, selectionStart) + originalText.slice(mainData.activeContextMenu[0].selectionEnd));
+
+                // Set the focus back to input
+                mainData.activeContextMenu[0].focus();
+                mainData.activeContextMenu[0].setSelectionRange(selectionStart, selectionStart);
+            } else if (action === "copy") {
+                // Save text to clipboard
+                navigator.clipboard.writeText(window.getSelection().toString());
+
+                if (mainData.activeContextMenu.is("input") === true || mainData.activeContextMenu.is("textarea") === true) {
+                    // Set the focus back to input / textarea
+                    mainData.activeContextMenu[0].focus();
+                    mainData.activeContextMenu[0].setSelectionRange(mainData.activeContextMenu[0].selectionStart, mainData.activeContextMenu[0].selectionEnd);
+                }
+            } else if (action === "paste") {
+                document.execCommand("paste");
+            } else if (action === "editTitle") {
+                method.action.getEditorInfo();
+                method.action.resetRowActivatedMenu();
+            } else if (action === "openDocument") {
+                method.action.openFile();
+                method.action.resetRowActivatedMenu();
+            }
+
+            // Reset data
+            mainData.activeContextMenu = undefined;
+
+            // Close the context-menu
+            contextMenu.removeClass("visible");
+        });
+
+
+        // Listener for #editorInfoFilePath
+        scope.on("contextmenu", "#editorInfoFilePath", (event) => {
+            if (window.getSelection().toString().length > 0) {
+                mainData.activeContextMenu = $("#editorInfoFilePath");
+                showContenxtMenu(event, ["copy"]);
+            }
+        });
+        // Listener for #editorBoxTitle & #inputSearchTable
+        scope.on("contextmenu", "#editorBoxTitleInput", (event) => {
+            mainData.activeContextMenu = $("#editorBoxTitleInput");
+            showContenxtMenu(event, ["cut", "copy", "paste"]);
+        });
+        scope.on("contextmenu", "#inputSearchTable", (event) => {
+            mainData.activeContextMenu = $("#inputSearchTable");
+            showContenxtMenu(event, ["cut", "copy", "paste"]);
+        });
+
+        // Listener for .dbclick-table-row
+        scope.on("contextmenu", ".dbclick-table-row", (event) => {
+            // Remove previous active-menu class 
+            method.action.resetRowActivatedMenu();
+
+            // Check if the target is top-row
+            const currentTarget = $(event.currentTarget);
+
+            if (currentTarget.hasClass("dtrg-level-0") === true) {
+                mainData.activeContextMenu = currentTarget.addClass("menu-active");
+            } else {
+                mainData.activeContextMenu = currentTarget.parent().addClass("menu-active");
+            }
+
+            showContenxtMenu(event, ["editTitle", "openDocument"]);
+        });
+
+
+        scope.on("click", null, (event) => {
+            // close the menu if the user clicks outside of it
+            if (event.originalEvent.target.offsetParent != contextMenu[0]) {
+                contextMenu.removeClass("visible");
+                method.action.resetRowActivatedMenu();
+                mainData.activeContextMenu = undefined;
+            }
+        });
+    },
+    resetRowActivatedMenu: () => { // Reset the active-menu class
+        // Remove active-menu class
+        if (mainData.activeContextMenu !== undefined) {
+            mainData.activeContextMenu.removeClass("menu-active");
+        }
+    }
 }
 
 
@@ -738,17 +943,17 @@ const annotationTableConfig = () => {
         deferRender: true,
         autoWidth: false,
         rowGroup: (mainData.config.groupAnnotations) ? {
-            dataSrc: 2,
+            dataSrc: 0,
             startRender: function (rows, group) {
                 // Add tooltip at rowgroup header
-                return $(`<tr class="dtrg-group dtrg-start dtrg-level-0 editable-data" data-document="${rows.data().pluck(0)[0]}"><th colspan="4" scope="row">${group}</th></tr>`);
+                return $(`<tr class="dtrg-group dtrg-start dtrg-level-0 highlightable dbclick-table-row"><th colspan="4" scope="row">${rows.data().pluck(2)[0]}</th></tr>`);
             },
         } : undefined,
         pageLength: mainData.config.pageLength,
         searchHighlight: true, // Enable SearchHighlight
         columnDefs: [
             { visible: false, target: (mainData.config.groupAnnotations) ? [0, 1, 2] : [0, 1] }, // Hide row
-            { searchable: false, target: (mainData.config.groupAnnotations) ? [0, 1, 2, 3, 4] : [0, 1, 3, 4] }, // Disabled searching
+            { searchable: false, target: (mainData.config.groupAnnotations) ? [0, 1, 3, 4] : [0, 1, 3, 4] }, // Disabled searching
             { className: "highlightable", target: [2, 5, 6] }, // Show search highlight style
             { className: "dbclick-table-row", target: [1, 2, 3, 4, 5, 6] }, // Enable double-click to openFile
             { className: "document-title", target: [2] }, // Enable document title styling
@@ -764,17 +969,25 @@ const annotationTableConfig = () => {
         },
         infoCallback: function (settings, start, end, max, total, pre) {
 
+            const temp = mainData.showPaginationButton;
             // Replace text if paging is larger than existing total annotations
-            if (mainData.config.pageLength === -1 || mainData.config.pageLength > total) {
+            if (mainData.config.pageLength === -1 || mainData.config.pageLength >= total) {
                 let textToReplace = `Showing ${start} to ${end} of ${total} annotations`;
                 let textReplaceTo = `Showing ${total} annotations`;
                 pre = pre.replace(textToReplace, textReplaceTo);
 
-                // Hide pagination button
-                $("#tableAnnotation_paginate").hide();
+                mainData.showPaginationButton = false;
             } else {
-                // Show pagination button
-                $("#tableAnnotation_paginate").show();
+                mainData.showPaginationButton = true;
+            }
+
+            if (temp !== mainData.showPaginationButton) { // UI need to be changed
+                method.UI.resizeBox();
+            }
+
+            // Append empty box
+            if(mainData.config.groupAnnotations === true && total === 0){
+                $("#tableAnnotation tbody").prepend(`<tr class="group-bottom-transparent-row top-group"><td colspan="4"></td></tr>`);
             }
 
             $("#infoTableStats").text(pre);
@@ -787,60 +1000,80 @@ const annotationTableConfig = () => {
 
             const api = this.api();
             const rows = api.rows({ page: "current" }).nodes();
-            const documentTitleColumn = api.column(2, { page: "current" }).data();
-            const totaldocumentTitleColumn = documentTitleColumn.length;
             const filePathColumn = api.column(0, { page: "current" }).data();
+            const totalFilePathColumn = filePathColumn.length;
 
             // Add class for styling
             // Add transparent bottom row
             if (mainData.config.groupAnnotations === true) {
 
+                // Reset all class
+                // $(".group-top-row ").removeClass("group-top-row");
+                $(".group-bottom-row").removeClass("group-bottom-row");
+
                 let last = null;
                 let getTopGroup = false;
 
+                for (let index = 0; index < totalFilePathColumn; index++) {
 
-                for (let index = 0; index < totaldocumentTitleColumn; index++) {
-                    // Reset all class
-                    $(rows).eq(index - 1).removeClass("group-top-row group-bottom-row");
-
-                    if (last === null) { // Avoid first row
-                        $(rows).eq(index).before(`<tr class="group-bottom-transparent-row top-group"><td colspan="4"></td></tr>`);
-                        last = documentTitleColumn[index];
-                        getTopGroup = true;
-
-                    } else if (getTopGroup) { // Get the group-top-row(row after row-grouping)
+                    if (getTopGroup) { // Get the group-top-row(row after row-grouping)
                         // Add group-top styles
-                        $(rows).eq(index - 1).addClass("group-top-row");
+                        // $(rows).eq(index - 1).addClass("group-top-row");
                         getTopGroup = false; // Reset flag
+
+                    } else if (last === null) { // Get the first row
+                        $(rows).eq(index).before(`<tr class="group-bottom-transparent-row top-group"><td colspan="4"></td></tr>`);
+                        last = filePathColumn[index];
+                        getTopGroup = true;
                     }
 
-                    if (last !== documentTitleColumn[index]) {
+                    if (last !== filePathColumn[index]) {
                         // Add transparent row
                         $(rows).eq(index).before(`<tr class="group-bottom-transparent-row"><td colspan="4"></td></tr>`);
 
                         // Add group-bottom styles
                         $(rows).eq(index - 1).addClass("group-bottom-row");
 
-                        last = documentTitleColumn[index];
+                        last = filePathColumn[index];
                         getTopGroup = true;
+
+                        // If this is the last row with single item group (last group that contain only single item), need to also add group-top-row, because there is no next round to add that class
+                        if ((index + 1) === totalFilePathColumn) {
+                            // $(rows).eq(index).addClass("group-top-row");
+                        }
                     }
 
-                    if (totaldocumentTitleColumn === (index + 1)) { // Get last row
+                    if (totalFilePathColumn === (index + 1)) { // Get last row
                         // $(rows).eq(index).after(`<tr class="group-last-row"><td colspan="3"></td></tr>`);
                     }
                 }
             } else {
-                // Add tooltip
-                for (let index = 0; index < totaldocumentTitleColumn; index++) {
-                    $(rows).eq(index).children().first().addClass("editable-data").attr("data-document", filePathColumn[index]);
-                }
+                // Add top transparent
+                // $("#tableAnnotation tbody").prepend(`<tr class="group-bottom-transparent-row top-group"><td colspan="5"></td></tr>`);
             }
 
-            // Add pagination style and scroll to top
+            // Add style to pagination button & scroll-to-top
             $(".paginate_button").addClass("button").click(function () {
                 if ($(this).hasClass("disabled") === false) {
                     $("#tableAnnotation_wrapper").animate({ scrollTop: 0 }, 250);
                 }
+                
+            });
+
+            // Set sort header style
+            // Remove all exisitng icon
+            $("#tableAnnotation thead th .material-icons-round").remove();
+            // Add soring icon
+            $('#tableAnnotation thead th').each((index, object) => {
+                const current = $(object);
+                if (current.hasClass("sorting_asc") === true) {
+                    current.append(`<span class="material-icons-round active">arrow_upward</span>`);
+                } else if (current.hasClass("sorting_desc") === true) {
+                    current.append(`<span class="material-icons-round active">arrow_downward</span>`);
+                } else {
+                    current.append(`<span class="material-icons-round">sort</span>`);
+                }
+
             });
         },
 
@@ -852,4 +1085,3 @@ const annotationTableConfig = () => {
 window.addEventListener('load', async (event) => {
     method.initApp();
 });
-
