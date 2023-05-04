@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('backend', {
     getAnnotation: (directoryData, config) => ipcRenderer.invoke('data:getAnnotation', directoryData, config), // Async
     openFile: (config, documentPath, documentPage) => ipcRenderer.invoke('action:openFile', config, documentPath, documentPage), 
     updateStatus: (callback) => ipcRenderer.on('update:status', callback),
-    openAppUrl: () => ipcRenderer.send('open:appUrl')
+    openAppUrl: () => ipcRenderer.send('open:appUrl'),
+    getEditorInfo: (documentPath) => ipcRenderer.invoke('editor:getInfo', documentPath), // Async
+    saveEditorInfo: (documentPath, newInfo) => ipcRenderer.invoke('editor:saveInfo', documentPath, newInfo) // Async
+    
 });
-

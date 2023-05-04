@@ -1,22 +1,25 @@
 "use strict";
 
-const { dialog } = require('electron')
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const fs = require('fs');
 const path = require('path');
-const Store = require('electron-store');
+const { dialog } = require('electron');
 const { exec } = require('child_process');
-
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+const { PDFDocument } = require('pdf-lib');
+const Store = require('electron-store');
 const log = require('electron-log');
+const fns = require('date-fns')
+
+
 log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
 
 // Define the configuration data scheme. This sceheme will be store persistently.
 const configSchema = {
     config: {
         type: "object",
-        required: ["ver", "directoryList", "enableRecursive", "showRelativePath", "showTitle", "trimNewline"],
+        required: ["ver", "directoryList", "pdfAppExecutablePath", "enableRecursive", "showRelativePath", "showTitle", "trimNewline", "pageLength", "showModificationDate", "groupAnnotations", "sortGroupAsc"],
         properties: {
-            ver: { type: "string", default: "0.5.2" }, // Config version -> for future update checking
+            ver: { type: "string", default: "0.8.5" }, // Config version -> for future update checking
             directoryList: { type: "array", default: [] },
             pdfAppExecutablePath: { type: "string", default: "" },
             enableRecursive: { type: "boolean", default: true },
@@ -24,12 +27,18 @@ const configSchema = {
             showTitle: { type: "boolean", default: true },
             trimNewline: { type: "boolean", default: true },
             pageLength: { type: "number", default: 10, maximum: 100, minimum: -1 },
+            showModificationDate: { type: "boolean", default: false },
+            groupAnnotations: { type: "boolean", default: true },
+            sortGroupAsc: { type: "boolean", default: true }
         },
         default: {}
     }
 };
 const store = new Store({ schema: configSchema, clearInvalidConfig: true });
 
+const standardFontDataUrl = path.join(__dirname, '../../node_modules/pdfjs-dist/standard_fonts/');
+
+const errorDateValue = "N/A"; // When date parsing failed.
 
 // Recursive loop to get all files and directories
 const getAllPdfFiles = async (parentDirectory, directoryList, enableRecursive, pdfFileList, statCounter) => {
@@ -115,7 +124,8 @@ const readPdfDocument = async (config, documentPath) => {
     let currentPDFannotation = [];
 
     // Read PDF document
-    let documentObject = pdfjsLib.getDocument(documentPath);
+    // Set standardFontDataUrl to avoid warning on missing fonts
+    let documentObject = pdfjsLib.getDocument({ url: documentPath, standardFontDataUrl: standardFontDataUrl });
     let pdf = await documentObject.promise;
 
     // Set the PDF's title as document name if showTitle is enabled
@@ -139,15 +149,19 @@ const readPdfDocument = async (config, documentPath) => {
 
         /*  DataTable's array format:
                 0 - Full PDF File Path (including PDF Filename)
-                1 - PDF Filename / Document Title
-                2 - Page Number
-                3 - Annotation Type
-                4 - Annotation Content
+                1 - Annotation Counter - for sorting (value is assigned after the return)
+                2 - PDF Filename / Document Title
+                3 - Page Number
+                4 - Annotation Type
+                5 - Annotation Content
+                6 - Creation Date / Modification Date
         */
 
         for (const item of currentPageAnnotationList) {
-            currentPDFannotation.push([documentPath, documentName, currentPageNo, item[0], item[1]]);
+            currentPDFannotation.push([documentPath, null, documentName, currentPageNo, item[0], item[1], parsePdfDate(item[2])]);
+
         }
+
     }
 
     return currentPDFannotation;
@@ -169,16 +183,23 @@ const getPageAnnotation = async (pageContent, config) => {
         if (annotationRawList[i].subtype == "Highlight") {
             // Get annotate string
             let annotateText = annotationRawList[i].contentsObj.str;
+
+            // Get creationDateTime / modificationDateTime
+            let dateTime = (config.showModificationDate === true) ? annotationRawList[i].modificationDate : annotationRawList[i].creationDate;
+
             if (annotateText.length > 0) {
                 if (config.trimNewline === true) {
-                    pageAnnotationList.push(["Comment", annotateText.replace(/(?:\r\n|\r|\n)/g, " ")]);
+                    pageAnnotationList.push([`<span class="material-icons-round table-comment">chat</span>`, annotateText.replace(/(?:\r\n|\r|\n)/g, " "), dateTime]);
                 } else {// Convert newline char to <br> tags
-                    pageAnnotationList.push(["Comment", annotateText.replace(/(?:\r\n|\r|\n)/g, "<br>")]);
+                    pageAnnotationList.push([`<span class="material-icons-round table-comment">chat</span>`, annotateText.replace(/(?:\r\n|\r|\n)/g, "<br>"), dateTime]);
                 }
 
             } else {
+
                 // No annotate string, so this is highlight only without comment
                 // Store the rectangle dimensions value
+                // Before store, insert creationDateTime / modificationDateTime as the 5th item
+                annotationRawList[i].rect.push(dateTime);
                 annotationRectangleList.push(annotationRawList[i].rect);
             }
         }
@@ -214,12 +235,33 @@ const getPageAnnotation = async (pageContent, config) => {
                         textArray.push(currentText.text);
                     }
                 }
-                pageAnnotationList.push(["Highlight", textArray.join(' ')]);
+                pageAnnotationList.push([`<span class="material-icons-round table-highlight">border_color</span>`, textArray.join(' '), rectangleDimensions[4]]); // [4] is the creationDate / modificationDate
             }
         }
     }
 
     return pageAnnotationList;
+}
+
+
+const parsePdfDate = (dateString) => {
+
+    // Ensure date string is non-empty
+    if (dateString === undefined || dateString === null || typeof dateString !== "string" || dateString === "") {
+        return errorDateValue;
+    }
+
+    try {
+        // Slice string for primary data without unrelated token
+        // Slice based on -> D:YYYYMMDDHHmmSSOHH'mm'. Refer: https://www.verypdf.com/pdfinfoeditor/pdf-date-format.htm
+        dateString = dateString.slice(2, 19) + dateString.slice(20, 22);
+        let date = fns.parse(dateString, "yyyyMMddHHmmssxx", new Date()); // Refer: https://date-fns.org/v2.29.3/docs/parse
+
+        return date.toLocaleString().toUpperCase().replace(", ", "<br>");
+    } catch (error) {
+        console.error(error);
+        return errorDateValue;
+    }
 }
 
 
@@ -270,24 +312,27 @@ module.exports = {
     },
     getAllPdfAnnotation: async (event, directoryData, config, frontend) => { // Iterate over list file to read each PDF
 
-        let current = 1;
-
+        let currentPdfCount = 1;
+        let currentAnnotationCount = 1;
         let allAnotationList = []
         let failedFileList = []
         // Iterate over each PDF file
         for (const file of directoryData.pdfFileList) {
 
-            frontend.setStatus(`Reading PDF Document: ${current}/${directoryData.statCounter.file} (${(current / directoryData.statCounter.file * 100).toFixed(1)}%)`);
+            frontend.setStatus(`Reading PDF Document: ${currentPdfCount}/${directoryData.statCounter.file} (${(currentPdfCount / directoryData.statCounter.file * 100).toFixed(1)}%)`);
             try {
                 let documentAnnotationList = await readPdfDocument(config, file);
                 for (const annotationItem of documentAnnotationList) {
+                    // Add annotation counter value
+                    annotationItem[1] = currentAnnotationCount++;
+
                     allAnotationList.push(annotationItem);
                 }
             } catch (error) {
                 log.error(file, error);
                 failedFileList.push(file);
             }
-            current++;
+            currentPdfCount++;
         }
 
         return { annotationList: allAnotationList, failedList: failedFileList };
@@ -318,6 +363,92 @@ module.exports = {
         } catch (error) {
             log.error(error);
             return { success: false, reason: "Unable to open the PDF file: " + documentPath };
+        }
+    },
+    getEditorInfo: async (event, documentPath) => { // Get PDF document info for editor
+
+        // Seperate exist check, access check and document read for clearer error info
+        try {
+            // Check existence
+            if (fs.existsSync(documentPath) !== true) {
+                return { success: false, reason: "Unable to find the PDF document file." };
+            }
+
+            // Check read permission
+            await fs.promises.access(documentPath, fs.constants.R_OK);
+        } catch (error) {
+            log.error(error);
+            return { success: false, reason: "Unable to access the PDF document file." };
+        }
+
+        try {
+            // Read document
+            const contents = await fs.promises.readFile(documentPath);
+            const pdfDoc = await PDFDocument.load(contents);
+            const documentTitle = pdfDoc.getTitle();
+
+            if (documentTitle === undefined) {
+                return { success: true, documentTitle: "" };
+            } else {
+                return { success: true, documentTitle: documentTitle };
+            }
+        } catch (error) {
+            log.error(error);
+            return { success: false, reason: "Unable to read the PDF document file." };
+        }
+    },
+    saveEditorInfo: async (event, documentPath, newInfo) => { // Save PDF document info from editor
+
+        // Seperate exist check, access check and document write for clearer error info
+        try {
+            // Check existence
+            if (fs.existsSync(documentPath) !== true) {
+                return { success: false, reason: "Failed to find the PDF document file." };
+            }
+
+            // Check write permission
+            await fs.promises.access(documentPath, fs.constants.W_OK);
+        } catch (error) {
+            log.error(error);
+            return { success: false, reason: "Failed to write the PDF document file. Close any application that is open the PDF document file." };
+        }
+
+        // Read document
+        let contents = null;
+        let pdfDoc = null;
+
+        try {
+            // Read document
+            contents = await fs.promises.readFile(documentPath);
+            pdfDoc = await PDFDocument.load(contents);
+
+            // Set title
+            pdfDoc.setTitle(newInfo.documentTitle);
+
+            // Set PDF producer
+            // pdfDoc.setProducer((pdfDoc.getProducer() === undefined) ? "" : pdfDoc.getProducer());
+
+        } catch (error) {
+            log.error(error);
+            return { success: false, reason: "Failed to save the PDF document's title." };
+        }
+
+        // Made backup copy first
+        try {
+            await fs.promises.copyFile(documentPath, documentPath + ".backup", fs.constants.COPYFILE_EXCL);
+          } catch (error) {
+            log.info(error);
+        }
+
+
+        try {
+            // Save document
+            await fs.promises.writeFile(documentPath, await pdfDoc.save());
+
+            return { success: true };
+        } catch (error) {
+            log.error(error);
+            return { success: false, reason: "Failed to save the PDF document's title. Close any application that is open the PDF document file." };
         }
     }
 
