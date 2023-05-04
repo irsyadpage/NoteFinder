@@ -1,6 +1,7 @@
 "use strict";
 
 const { app, BrowserWindow, ipcMain, nativeImage } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const log = require('electron-log');
 
@@ -12,7 +13,7 @@ const createWindow = () => {
         width: 1280,
         height: 900,
         minWidth: 900,
-        minHeight: 640,
+        minHeight: 720,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             devTools: (app.commandLine.getSwitchValue("mode") === "dev") ? true : false, // Enable chrome dev tools if arg --mode=dev  
@@ -41,28 +42,44 @@ const createWindow = () => {
         // Currently, below command unable to show the devtools window properly. Need to press Ctrl+Shift+I 3 times (while focusing on the main-window)
         // mainWindow.webContents.openDevTools();
     }
-    
+
 };
 
 app.whenReady().then(() => {
 
     createWindow();
-    
+
     // Define ipc events
     ipcMain.on('log:info', (event, text) => { log.info(text); });
     ipcMain.on('log:error', (event, text) => { log.error(text); });
     ipcMain.handle('config:get', data.getConfig);
     ipcMain.handle('config:save', data.saveConfig);
+
     ipcMain.handle('action:chooseFile', data.chooseFile)
     ipcMain.handle('data:checkDirectory', data.checkDirectory);
-    ipcMain.handle('data:getAnnotation', (event, directoryData, config) => { return data.getAllPdfAnnotation(event, directoryData, config, frontend); });
+    ipcMain.handle('data:readDocument', data.readDocument);
     ipcMain.handle('action:openFile', data.openPdfFile);
     ipcMain.on('open:appUrl', (event) => {
         require('electron').shell.openExternal('https://github.com/irsyadler/NoteFinder');
     });
     ipcMain.handle('editor:getInfo', data.getEditorInfo);
     ipcMain.handle('editor:saveInfo', data.saveEditorInfo);
-    
+
+    // Reset application 
+    ipcMain.handle('app:reset', (event) => {
+        log.info('Triggered: app:reset');
+
+        // Get appData path
+        const appDataPath = path.join(app.getPath('appData'), app.getName());
+       
+        // Delete appData and relaunch
+        fs.rm(appDataPath, { recursive: true, force: true }, () => {
+            log.info('Completed: app:reset');
+            app.relaunch();
+            app.exit();
+        });
+    });
+
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
