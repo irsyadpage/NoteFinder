@@ -1,0 +1,657 @@
+:root {
+    /* --color-dark-primary: #212121; */
+    --color-dark-primary: #333333;
+    --color-dark-secondary: #424242;
+    --color-font-light: #ffffff;
+    --color-font-dark: #333333;
+    --color-background-light: #fff;
+    --color-main-one: rgba(0, 188, 212, 1);
+    --color-main-two: rgba(63, 81, 181, 1);
+    --color-main-gradient: linear-gradient(135deg, var(--color-main-one) 5%, var(--color-main-two) 95%);
+    --border-radius: 16px;
+    --box-shadow-main: 0 0 1rem 0.15rem rgba(0, 188, 212, 0.3), 0 0 1rem 0.15rem rgba(63, 81, 181, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+html,
+body {
+    height: 100%;
+    background-color: var(--color-dark-primary);
+    overflow: hidden;
+}
+
+
+/* Webpage loader style ------------------------------------------------------------------------------------------------------------------ */
+#containerLoader {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    user-select: none;
+    background: linear-gradient(135deg, var(--color-dark-secondary) 0%, var(--color-dark-primary) 100%);
+    flex-flow: column;
+}
+
+#containerLoader.hidden {
+    display: none;
+}
+
+#containerLoader img {
+    width: 400px;
+}
+
+/* #END ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Container title bar ------------------------------------------------------------------------------------------------------------------ */
+#containerTitleBar {
+    width: 100%;
+    /* Must be same with height in #containerContent */
+    height: 2rem;
+    background-color: var(--color-dark-primary);
+    color: var(--color-font-light);
+    z-index: 20;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-app-region: drag;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* #END Container title bar ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Container content ------------------------------------------------------------------------------------------------------------------ */
+#containerContent {
+    display: none;
+    /* Must be same with height in #containerTitleBar */
+    top: 2rem;
+    bottom: 0;
+    width: 100%;
+}
+
+#containerContent.active {
+    display: block;
+}
+
+
+/* #END Container content ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Commons content ------------------------------------------------------------------------------------------------------------------ */
+.button {
+    color: var(--color-font-light);
+    background: var(--color-main-gradient);
+    border: none;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    user-select: none;
+    border-radius: var(--border-radius);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.button:hover {
+    background: var(--color-main-gradient);
+    color: var(--color-font-light);
+    box-shadow: var(--box-shadow-main);
+    text-shadow: 0 .25rem 0.75rem rgba(0, 0, 0, 0.25);
+}
+
+.button:disabled {
+    background-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(0, 0, 0, 0.5);
+    border: none;
+    padding: 1rem 2rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: unset;
+    box-shadow: unset;
+    transition: unset;
+    cursor: default;
+}
+
+.button:disabled:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(0, 0, 0, 0.5) !important;
+    cursor: default;
+    box-shadow: unset;
+    text-shadow: unset;
+}
+
+.button span.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.3);
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+    margin-left: -50px;
+    animation: buttonRipple 1s;
+    opacity: 0;
+}
+
+@keyframes buttonRipple {
+    from {
+        opacity: 1;
+        transform: scale(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(10);
+    }
+}
+
+/* #END Commons content ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Section menu content ------------------------------------------------------------------------------------------------------------------ */
+#sectionMenu {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    display: flex;
+    background-color: var(--color-dark-primary);
+    align-items: center;
+    justify-content: center;
+    -webkit-app-region: drag;
+    box-shadow: 0 10px 12px 0 rgb(51 51 51 / 50%);
+    z-index: 1;
+    position: relative;
+}
+
+#sectionMenu.highlight {
+    background-color: var(--color-main-one)
+}
+
+#sectionMenu>div {
+    -webkit-app-region: no-drag;
+}
+
+#sectionMenu>div:not(:last-child) {
+    margin-right: 1rem;
+}
+
+#sectionMenu>.break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+#buttonChooseDirectory {
+    width: 600px;
+}
+
+.icon-right {
+    margin-right: 0.5rem;
+}
+
+.icon-left {
+    margin-left: 0.5rem;
+}
+
+.menu-button {
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-font-dark);
+    background: var(--color-background-light);
+    box-shadow: none;
+}
+
+.menu-button.transparent.disabled {
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: unset;
+    cursor: default;
+    display: none;
+}
+
+#buttonChooseDirectory.disabled,
+#buttonChooseDirectory.disable:hover {
+    color: rgba(0, 0, 0, 0.5);
+    cursor: default;
+    box-shadow: unset;
+    text-shadow: unset;
+    background: rgba(255, 255, 255, 0.75);
+    display: flex;
+}
+
+.menu-button.transparent {
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-font-light);
+    background: none;
+}
+
+.menu-button.transparent:hover {
+    background: var(--color-main-gradient);
+    color: var(--color-font-light);
+}
+
+.menu-button[data-state="on"] {
+    background: var(--color-main-gradient);
+    color: var(--color-font-light);
+}
+
+#buttonMenuToggle.active {
+    background: var(--color-main-gradient);
+    color: var(--color-font-light);
+}
+
+/* #END Section menu content ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Section information content ------------------------------------------------------------------------------------------------------------------ */
+
+#sectionInfo {
+    padding: 0rem 1rem 1rem 1rem;
+    display: none;
+    color: var(--color-font-light);
+    background-color: var(--color-dark-primary);
+    align-items: center;
+    flex-direction: column;
+    position: relative;
+}
+
+#sectionInfo.active {
+    display: flex;
+}
+
+#sectionInfo>div {
+    display: flex;
+}
+
+.menu-button.switch {
+    width: 250px;
+}
+
+.group-menu-button-switch>div:not(:last-child) {
+    margin-right: 1rem;
+}
+
+.info-header {
+    text-align: center;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    margin-top: 2rem;
+}
+
+#buttonChoosePdfApp {
+    max-width: 750px;
+}
+
+#imgInfoLogo {
+    height: 50px;
+    margin-bottom: 1rem;
+}
+
+
+#sectionInfo #copyright {
+    display: block;
+    text-align: center;
+}
+
+#sectionInfo #copyright code {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+
+#appUrl:hover, #appLicense:hover {
+    color: var(--color-main-one);
+    cursor: pointer;
+    text-decoration: underline;
+
+}
+
+/* #END Section information content ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* Section Main content ------------------------------------------------------------------------------------------------------------------ */
+#sectionTable {
+    padding: 1rem;
+    background-color: var(--color-dark-secondary);
+    position: relative;
+    overflow-y: auto;
+    background-image: url('images/background.svg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+.menu-seperator {
+    flex-grow: 1;
+}
+
+.menu-stat-info {
+    height: 2rem;
+    display: flex;
+    justify-content: center;
+    color: var(--color-font-light);
+    white-space: nowrap;
+
+}
+
+.menu-stat-info span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-background-light);
+    color: var(--color-font-dark);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.menu-stat-info .value {
+    font-weight: 700;
+    background-color: var(--color-main-one);
+    color: var(--color-font-light);
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+.menu-stat-info .type {
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+}
+
+#box-table-filter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#buttonSetPageLength {
+    padding: 0rem;
+    background-color: unset;
+    min-width: fit-content;
+}
+
+#buttonSetPageLength span.text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-background-light);
+    color: var(--color-font-dark);
+    height: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+}
+
+#buttonSetPageLength span.value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-dark-primary);
+    color: var(--color-font-light);
+    height: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-weight: 700;
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+#buttonSetPageLength:hover span.text,
+#buttonSetPageLength:hover span.value {
+    background-color: transparent;
+    color: var(--color-font-light);
+}
+
+#boxFilter {
+    display: flex;
+    padding-bottom: 1rem;
+    align-items: center;
+}
+
+#boxFilter>div:not(:last-child) {
+    margin-right: 1rem;
+}
+
+#boxFilterInput {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-background-light);
+    border-radius: var(--border-radius);
+    padding-left: 1rem;
+    padding-right: 1rem;
+    height: 3rem;
+    width: 100%;
+    min-width: 215px;
+    max-width: 350px;
+}
+
+#boxFilterInput input {
+    border: none;
+    width: 100%;
+}
+
+#boxFilterInput input:focus {
+    outline: none;
+}
+
+#boxStatus {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-dark-secondary);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    color: var(--color-font-light);
+}
+
+#boxStatus.active {
+    display: flex;
+}
+
+
+#boxStatusLoader {
+    height: 100px;
+    width: 100px;
+    position: relative;
+    margin-right: 2rem;
+}
+
+#imgStatusOut,
+#imgStatusIn {
+    top: 0;
+    left: 0;
+    width: 100px;
+    position: absolute;
+}
+
+#imgStatusOut {
+    animation: spin 4s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+#boxStatusText.min-width {
+    min-width: 300px;
+}
+
+#boxStatusError {
+    font-size: 3rem;
+}
+
+/* #END Section Main content ------------------------------------------------------------------------------------------------------------------ */
+
+
+
+
+
+/* DataTable content ------------------------------------------------------------------------------------------------------------------ */
+/* From DataTables CDN */
+table.dataTable span.highlight {
+    background-color: #FFFF88;
+    border-radius: 0.28571429rem;
+}
+
+table.dataTable .no-highlight span.highlight {
+    background-color: var(--color-background-light);
+}
+
+/* From DataTables CDN */
+table.dataTable span.column_highlight {
+    background-color: #ffcc99;
+    border-radius: 0.28571429rem;
+}
+
+#tableAnnotation_wrapper {
+    width: 100%;
+    user-select: auto;
+}
+
+#tableAnnotation {
+    margin-bottom: 0.5rem;
+    border: none;
+
+}
+
+#tableAnnotation tr .dbclick-table-row {
+    line-height: 1.5rem;
+    font-family: "CharisSIL", sans-serif;
+    user-select: text;
+}
+
+#tableAnnotation tr:hover .dbclick-table-row {
+    background-color: var(--color-main-one);
+    cursor: pointer;
+}
+
+#tableAnnotation .dataTables_empty {
+    border-radius: var(--border-radius);
+}
+
+.dtrg-group.dtrg-start.dtrg-level-0 th {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    text-align: center;
+    color: var(--color-main-one);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(25px) saturate(200%);
+}
+
+/* Prevent highlight */
+.dtrg-group.dtrg-start.dtrg-level-0 th span.highlight {
+    background-color: transparent;
+}
+
+.dtrg-group.dtrg-end.dtrg-level-0 th {
+    background-color: transparent;
+}
+
+#tableAnnotation tr.odd td,
+#tableAnnotation tr.even td {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(25px) saturate(200%);
+}
+
+#tableAnnotation tr.group-last-row td {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(25px) saturate(200%);
+}
+
+#tableAnnotation tr.group-last-row-transparent {
+    background-color: transparent;
+}
+
+#tableAnnotation_info {
+    color: var(--color-font-light);
+}
+
+
+#tableAnnotation_paginate {
+    color: var(--color-font-dark);
+}
+
+#tableAnnotation_paginate.dataTables_paginate *:not(:first-child),
+#tableAnnotation_paginate.dataTables_paginate span>*:not(:first-child) {
+    margin-left: 0.5rem;
+}
+
+#tableAnnotation_paginate.dataTables_paginate a.paginate_button {
+
+    background: var(--color-background-light);
+    border: none;
+    border-radius: var(--border-radius);
+}
+
+#tableAnnotation_paginate.dataTables_paginate a.paginate_button.current {
+    color: var(--color-font-light) !important;
+    background: var(--color-main-gradient);
+}
+
+#tableAnnotation_paginate.dataTables_paginate a.paginate_button:hover {
+    /*  Override datatables.min.css */
+    color: var(--color-font-light) !important;
+    background: var(--color-main-gradient);
+}
+
+#tableAnnotation_paginate.dataTables_paginate a.paginate_button.disabled,
+#tableAnnotation_paginate.dataTables_paginate a.paginate_button.disabled:hover {
+    color: rgba(0, 0, 0, 0.5) !important;
+    text-shadow: unset;
+    cursor: default;
+    background: rgba(255, 255, 255, 0.75);
+}
+
+
+#tableAnnotation_paginate.dataTables_paginate span.ellipsis {
+    color: var(--color-font-light);
+    font-weight: 700;
+    padding: 0 0.5rem;
+}
+
+::-webkit-scrollbar {
+    width: 0.75rem;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    /* background: #616161; */
+    background-color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(25px) saturate(200%);
+    border-radius: var(--border-radius);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-main-one);
+}
+
+/* #END DataTable content ------------------------------------------------------------------------------------------------------------------ */
